@@ -41,6 +41,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: 'php-fpm-stats-exporter:latest'
-      - name: End workflow
+      - name: End
         run: echo "Workflow finished"
         id: end
