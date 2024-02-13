@@ -111,11 +111,9 @@ jobs:
       - name: Image scan with Trivy
         uses: aquasecurity/trivy-action@master
         env:
-          ECR_REGISTRY: '${{ steps.login-ecr.outputs.registry }}'
-          ECR_REPOSITORY: ${{ inputs.ecr_repository }}
-          ECR_TAG: '${{ steps.generate-tags.outputs.first_tag }}'
+          DOCKER_URI: '${{ steps.generate-tags.outputs.first_tag }}'
         with:
-          image-ref: '${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.ECR_TAG }}'
+          image-ref: '${{ env.DOCKER_URI }}'
           format: sarif
           output: ./trivy-report.sarif
           ignore-unfixed: true
