@@ -9,7 +9,17 @@ The following environment variables are optional:
 - `FPM_PORT` - The port of the PHP-FPM server. Defaults to `9000'
 - `APPLICATION_NAME` - The name of the application. This will be used as the `ServiceName` dimension in CloudWatch. If not set, the value of ServiceName from the Fargate Metadata endpoint will be used.
 
-The following IAM permissions are required:
+Your PHP-FPM server must be configured to expose the status page. This can be done by adding the following to your PHP-FPM pool configuration:
+```ini
+pm.status_path = /status
+```
+
+Optionally, you can also set the `pm.status_listen` directive to avoid adding overhead to your main pool. For example:
+```ini
+pm.status_listen = 127.0.0.1:9001
+```
+
+The following IAM permissions are required for the ECS task role:
 ```json
 {
     "Version": "2012-10-17",
@@ -44,7 +54,7 @@ The following IAM permissions are required:
     },
     {
       "name": "php-fpm-stats",
-      "image": "php-fpm-stats:latest",
+      "image": "export-php-metrics:latest",
       "essential": true,
       "environment": [
         {
