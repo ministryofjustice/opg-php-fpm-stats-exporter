@@ -105,6 +105,7 @@ jobs:
           cache-from: type=gha
           cache-to: 'type=gha,mode=max'
           platforms: ${{ inputs.platforms }}
+          load: ${{ inputs.push == false }}
           tags: >-
             ${{ env.IMAGE_TAGS }}
 
