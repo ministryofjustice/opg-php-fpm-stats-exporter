@@ -1,5 +1,6 @@
 name: '[Workflow] Build and Publish Docker Image'
-'on':
+
+on:
   push:
     branches:
       - main

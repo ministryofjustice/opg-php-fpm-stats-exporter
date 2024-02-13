@@ -1,8 +1,12 @@
 name: '[Build and push image] Golang'
 
 permissions:
-  contents: read
+  security-events: write # This is required to upload the SARIF report
 
+defaults:
+  run:
+    shell: bash
+  
 on:
   workflow_call:
     inputs:
