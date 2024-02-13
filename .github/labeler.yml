@@ -1,0 +1,24 @@
+documentation:
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/*.md'
+
+docker:
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/Dockerfile'
+    - '**/docker-compose*'
+
+go:
+- changed-files:
+  - any-glob-to-any-file: '**/*.go'
+
+dependencies:
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/go.mod'
+    - '**/go.sum'
+
+github-actions:
+- changed-files:
+  - any-glob-to-any-file: './github/workflows/*.yml'

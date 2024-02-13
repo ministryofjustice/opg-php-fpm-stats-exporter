@@ -1,0 +1,46 @@
+name: '[Workflow] Pull Request'
+'on':
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: write
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+      - name: Run static analysis with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'HIGH,CRITICAL'
+      - name: Upload SARIF file to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+      - uses: actions/setup-go@v4
+        with:
+          go-version: stable
+      - name: Test with the Go CLI
+        run: go test -v
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: 'php-fpm-stats-exporter:latest'
+      - name: End
+        run: echo "Workflow finished"
+        id: end
