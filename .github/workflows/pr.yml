@@ -14,10 +14,9 @@ permissions:
 
 jobs:
   pull_request_labeler:
-    permissions:
-      contents: read
-      pull-requests: write
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/labeler@v5
         with:
@@ -26,6 +25,8 @@ jobs:
 
   docker:
     uses: ./.github/workflows/_build_go.yml
+    permissions:
+      security-events: write  
     with:
       tags: ${{ github.event.pull_request.head.sha }}
       ecr_repository: shared/php-fpm-stats-exporter

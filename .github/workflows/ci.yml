@@ -9,11 +9,13 @@ on:
       - .github/**
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   setup-build-publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       image_tag: ${{ steps.semver_tag.outputs.created_tag }}
     steps:
@@ -27,6 +29,8 @@ jobs:
   build-publish:
     uses: ./.github/workflows/_build_go.yml
     needs: setup-build-publish
+    permissions:
+      security-events: write
     with:
       tags: ${{ needs.setup-build-publish.outputs.image_tag }},latest
       ecr_repository: shared/php-fpm-stats-exporter
