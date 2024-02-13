@@ -1,46 +1,35 @@
 name: '[Workflow] Pull Request'
-'on':
+
+defaults:
+  run:
+    shell: bash
+
+on:
   pull_request:
     branches:
       - main
+
 permissions:
-  contents: write
+  contents: read
+
 jobs:
-  docker:
+  pull_request_labeler:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/labeler@v5
         with:
-          fetch-depth: '0'
-      - name: Run static analysis with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          ignore-unfixed: true
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'HIGH,CRITICAL'
-      - name: Upload SARIF file to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
-      - uses: actions/setup-go@v4
-        with:
-          go-version: stable
-      - name: Test with the Go CLI
-        run: go test -v
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: 'php-fpm-stats-exporter:latest'
-      - name: End
-        run: echo "Workflow finished"
-        id: end
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/labeler.yml
+
+  docker:
+    uses: ./.github/workflows/_build_go.yml
+    permissions:
+      security-events: write  
+    with:
+      tags: ${{ github.event.pull_request.head.sha }}
+      ecr_repository: shared/php-fpm-stats-exporter
+    secrets:
+      AWS_ACCESS_KEY_ID_ACTIONS: ${{ secrets.AWS_ACCESS_KEY_ID_ACTIONS }}
+      AWS_SECRET_ACCESS_KEY_ACTIONS: ${{ secrets.AWS_SECRET_ACCESS_KEY_ACTIONS }}

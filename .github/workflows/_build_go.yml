@@ -1,0 +1,128 @@
+name: '[Build and push image] Golang'
+
+permissions:
+  security-events: write # This is required to upload the SARIF report
+
+defaults:
+  run:
+    shell: bash
+  
+on:
+  workflow_call:
+    inputs:
+      tags:
+        description: A list of tags for the image. (comma separated)
+        type: string
+        default: latest
+      ecr_repository:
+        description: The name of the ECR repository
+        type: string
+        default: shared/php-fpm-stats-exporter
+      push:
+        description: Push to ECR
+        type: boolean
+        default: false
+      platforms:
+        description: The platforms to build for (comma separated)
+        type: string
+        default: linux/amd64
+    secrets:
+        AWS_ACCESS_KEY_ID_ACTIONS:
+            description: The AWS access key ID
+            required: true
+        AWS_SECRET_ACCESS_KEY_ACTIONS:
+            description: The AWS secret access key
+            required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version: stable
+
+      - name: Go Format
+        run: gofmt -s -w . && git diff --exit-code
+
+      - name: Go Vet
+        run: go vet .
+
+      - name: Go Tidy
+        run: go mod tidy && git diff --exit-code
+
+      - name: Go Mod
+        run: go mod download
+
+      - name: Go Mod Verify
+        run: go mod verify
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: 'arn:aws:iam::311462405659:role/opg-php-fpm-stats-exporter-ci'
+          role-session-name: GHActions-export-php-metrics-push-to-ecr
+          aws-region: eu-west-1
+          aws-access-key-id: '${{ secrets.AWS_ACCESS_KEY_ID_ACTIONS }}'
+          aws-secret-access-key: '${{ secrets.AWS_SECRET_ACCESS_KEY_ACTIONS }}'
+          role-duration-seconds: 1800
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Generate the container image tags
+        env:
+            ECR_REGISTRY: '${{ steps.login-ecr.outputs.registry }}'
+            ECR_REPOSITORY: ${{ inputs.ecr_repository }}
+            ECR_TAGS: '${{ inputs.tags }}'
+        id: generate-tags
+        run: |
+            # Generate the docker URIs to be pushed to ECR and the first tag from the list which will be used for a Trivy scan
+            docker_uris=""
+            for tag in ${ECR_TAGS//,/ }; do
+                docker_uris="${docker_uris}${docker_uris:+,}${ECR_REGISTRY}/${ECR_REPOSITORY}:${tag}"
+            done
+            echo "docker_uris=${docker_uris}" >> $GITHUB_OUTPUT
+            echo "first_tag=${ECR_REGISTRY}/${ECR_REPOSITORY}:${ECR_TAGS%%,*}" >> $GITHUB_OUTPUT
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        env:
+          IMAGE_TAGS: ${{ steps.generate-tags.outputs.docker_uris }}
+        with:
+          push: ${{ inputs.push }}
+          cache-from: type=gha
+          cache-to: 'type=gha,mode=max'
+          platforms: ${{ inputs.platforms }}
+          load: ${{ inputs.push == false }}
+          tags: >-
+            ${{ env.IMAGE_TAGS }}
+
+      - name: Image scan with Trivy
+        uses: aquasecurity/trivy-action@master
+        env:
+          DOCKER_URI: '${{ steps.generate-tags.outputs.first_tag }}'
+        with:
+          image-ref: '${{ env.DOCKER_URI }}'
+          format: sarif
+          output: ./trivy-report.sarif
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          github-pat: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: Upload SARIF report
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ./trivy-report.sarif

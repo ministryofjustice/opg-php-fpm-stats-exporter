@@ -66,34 +66,34 @@ func ExportToCloudwatch(svc cloudwatchiface.CloudWatchAPI, phpfpmstatus PHPFPMSt
 	PutMetricDataOutput, err := svc.PutMetricData(&cloudwatch.PutMetricDataInput{
 		Namespace: aws.String("Monitoring/PHP-FPM"),
 		MetricData: []*cloudwatch.MetricDatum{
-			&cloudwatch.MetricDatum{
+			{
 				MetricName: aws.String("ListenQueue"),
 				Unit:       aws.String("Count"),
 				Value:      aws.Float64(float64(phpfpmstatus.ListenQueue)),
 				Dimensions: []*cloudwatch.Dimension{
-					&cloudwatch.Dimension{
+					{
 						Name:  aws.String("ServiceName"),
 						Value: aws.String(servicename),
 					},
 				},
 			},
-			&cloudwatch.MetricDatum{
+			{
 				MetricName: aws.String("ActiveProcesses"),
 				Unit:       aws.String("Count"),
 				Value:      aws.Float64(float64(phpfpmstatus.ActiveProcesses)),
 				Dimensions: []*cloudwatch.Dimension{
-					&cloudwatch.Dimension{
+					{
 						Name:  aws.String("ServiceName"),
 						Value: aws.String(servicename),
 					},
 				},
 			},
-			&cloudwatch.MetricDatum{
+			{
 				MetricName: aws.String("SlowRequests"),
 				Unit:       aws.String("Count"),
 				Value:      aws.Float64(float64(phpfpmstatus.SlowRequests)),
 				Dimensions: []*cloudwatch.Dimension{
-					&cloudwatch.Dimension{
+					{
 						Name:  aws.String("ServiceName"),
 						Value: aws.String(servicename),
 					},
