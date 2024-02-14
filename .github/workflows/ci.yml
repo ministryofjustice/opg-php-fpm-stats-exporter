@@ -34,6 +34,7 @@ jobs:
     with:
       tags: ${{ needs.setup-build-publish.outputs.image_tag }},latest
       ecr_repository: shared/php-fpm-stats-exporter
+      push: true
     secrets:
       AWS_ACCESS_KEY_ID_ACTIONS: ${{ secrets.AWS_ACCESS_KEY_ID_ACTIONS }}
       AWS_SECRET_ACCESS_KEY_ACTIONS: ${{ secrets.AWS_SECRET_ACCESS_KEY_ACTIONS }}
