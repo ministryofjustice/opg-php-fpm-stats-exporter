@@ -1,4 +1,4 @@
-FROM golang:1.22.0 AS builder
+FROM golang:1.22.1 AS builder
 WORKDIR /src
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main . && \
