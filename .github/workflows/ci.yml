@@ -20,7 +20,7 @@ jobs:
       image_tag: ${{ steps.semver_tag.outputs.created_tag }}
     steps:
       - name: Bump version and push tag
-        uses: ministryofjustice/opg-github-actions/.github/actions/semver-tag@v2.7.3
+        uses: ministryofjustice/opg-github-actions/.github/actions/semver-tag@v3.1.0
         id: semver_tag
         env:
           github_token: '${{ secrets.GITHUB_TOKEN }}'
